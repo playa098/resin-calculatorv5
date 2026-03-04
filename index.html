@@ -2,14 +2,15 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Workshop Resin & Mould System</title>
+<title>Fibreglass Workshop Resin Calculator</title>
 
 <style>
 body {
-    font-family: Arial;
+    font-family: Arial, sans-serif;
     background: #1e1e1e;
     color: white;
     margin: 0;
+    padding: 0;
 }
 header {
     background: #ff6600;
@@ -22,25 +23,26 @@ header {
 
 input, select {
     width: 100%;
-    padding: 14px;
-    margin: 8px 0;
-    font-size: 16px;
+    padding: 15px;
+    margin: 10px 0;
+    font-size: 18px;
     border-radius: 6px;
     border: none;
 }
 
 button {
     width: 100%;
-    padding: 16px;
-    font-size: 18px;
+    padding: 18px;
+    font-size: 20px;
     background: #ff6600;
     color: white;
     border: none;
     border-radius: 6px;
 }
 
-.result, .glassBox {
+.result {
     margin-top: 20px;
+    font-size: 20px;
     background: #2a2a2a;
     padding: 15px;
     border-radius: 8px;
@@ -48,12 +50,19 @@ button {
 
 .warning { color: orange; font-weight: bold; }
 .danger { color: red; font-weight: bold; }
+.flash { animation: flash 1s infinite; }
+
+@keyframes flash {
+    0% {opacity:1;}
+    50% {opacity:0.2;}
+    100% {opacity:1;}
+}
 </style>
 </head>
 
 <body>
 
-<header>Workshop Resin & Mould Operator System</header>
+<header>Fibreglass Workshop Resin Calculator</header>
 
 <div class="container">
 
@@ -66,7 +75,7 @@ button {
 <input type="number" step="0.01" id="resinWeight" placeholder="Resin Weight (kg)">
 <input type="number" id="tempInput" placeholder="Temperature °C">
 <input type="number" id="humidityInput" placeholder="Humidity %">
-<input type="number" id="jobTime" placeholder="Desired Working Time (mins)">
+<input type="number" id="jobTime" placeholder="Desired Working Time (minutes)">
 
 <button onclick="calculateResin()">Calculate</button>
 
@@ -84,11 +93,12 @@ function calculateResin() {
     const desiredTime = parseFloat(document.getElementById("jobTime").value);
     const type = document.getElementById("resinType").value;
 
-    if (!resinKg || !temp || !humidity || !desiredTime) {
+    if (isNaN(resinKg) || isNaN(temp) || isNaN(humidity) || isNaN(desiredTime)) {
         document.getElementById("resinResult").innerHTML = "Fill in all fields.";
         return;
     }
 
+    /* Manufacturer specs */
     let gelTime, basePercent, catalystName;
 
     if (type === "winter") {
@@ -107,21 +117,32 @@ function calculateResin() {
         catalystName = "M100";
     }
 
+    /* Convert gel → working time (70%) */
     const workingMargin = 0.7;
     const baseWorkingTime = gelTime * workingMargin;
 
+    /* Temperature adjustment */
     const tempFactor = Math.pow(2, (temp - 25) / 10);
     const adjustedWorkingTime = baseWorkingTime / tempFactor;
 
+    /* Catalyst calculation */
     let catalystPercent = (basePercent/100) * (adjustedWorkingTime / desiredTime);
 
     if (humidity > 40)
         catalystPercent += (humidity - 40) * 0.00002;
 
-    catalystPercent = Math.max(0.01, Math.min(0.03, catalystPercent));
+    let hitMax = false;
+    if (catalystPercent > 0.03) {
+        catalystPercent = 0.03;
+        hitMax = true;
+    }
+    if (catalystPercent < 0.01)
+        catalystPercent = 0.01;
 
+    /* Working time (mass does NOT affect this) */
     let finalWorkingTime = adjustedWorkingTime * ((basePercent/100) / catalystPercent);
 
+    /* Catalyst mL */
     const resinGrams = resinKg * 1000;
     const catalystML = (resinGrams * catalystPercent) / 1.1;
 
@@ -130,10 +151,28 @@ function calculateResin() {
         `Catalyst Type: <b style="color:#ff6600;">${catalystName}</b><br>` +
         `Catalyst %: <b>${(catalystPercent*100).toFixed(2)}%</b><br>` +
         `Catalyst Amount: <b>${catalystML.toFixed(1)} mL</b><br>` +
-        `Working Time: ~${finalWorkingTime.toFixed(0)} mins<br>`;
+        `Estimated Working Time: ~${finalWorkingTime.toFixed(0)} mins<br>`;
 
+    /* Fast kick warning */
     if (finalWorkingTime < 5)
-        html += "<div class='danger'>⚠ EXTREME FAST KICK RISK</div>";
+        html += "<div class='danger flash'>⚠ EXTREME FAST KICK RISK</div>";
+
+    /* -------- DEGAS LOGIC (Mass affects ONLY this) -------- */
+    if (hitMax && finalWorkingTime > desiredTime) {
+
+        let degas = finalWorkingTime - desiredTime;
+
+        /* Mass acceleration applied only to degas */
+        let exothermFactor = 1 + Math.pow(resinKg, 1.3) * 0.04;
+        if (resinKg <= 1) exothermFactor = 1;
+
+        let safeDegasWindow = degas / exothermFactor;
+
+        if (safeDegasWindow > 10)
+            html += `<div class='danger'>DEGAS REQUIRED: ~${safeDegasWindow.toFixed(0)} mins (Mass Accelerated)</div>`;
+        else
+            html += `<div class='warning'>Degas Window: ~${safeDegasWindow.toFixed(0)} mins</div>`;
+    }
 
     document.getElementById("resinResult").innerHTML = html;
 }
