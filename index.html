@@ -21,7 +21,7 @@ header {
 }
 .container { padding: 20px; }
 
-input, select {
+input {
     width: 100%;
     padding: 15px;
     margin: 10px 0;
@@ -42,141 +42,127 @@ button {
 
 .result {
     margin-top: 20px;
-    font-size: 20px;
-    background: #2a2a2a;
-    padding: 15px;
-    border-radius: 8px;
-}
-
-.warning { color: orange; font-weight: bold; }
-.danger { color: red; font-weight: bold; }
-.flash { animation: flash 1s infinite; }
-
-@keyframes flash {
-    0% {opacity:1;}
-    50% {opacity:0.2;}
-    100% {opacity:1;}
+    font-size: 22px;
+    font-weight: bold;
 }
 </style>
 </head>
 
 <body>
 
-<header>Fibreglass Workshop Resin Calculator</header>
+<header>
+Fibreglass Workshop Resin Calculator
+</header>
 
 <div class="container">
 
-<select id="resinType">
-    <option value="summer">Summer (70 min @2%)</option>
-    <option value="infusion">Infusion (35 min @1.5%)</option>
-    <option value="winter">Winter (25 min @2%)</option>
-</select>
+<h2>Resin Calibration (Real Gel Test)</h2>
+<label>Base Temperature (°C)</label>
+<input id="baseTemp" type="number" value="27">
 
-<input type="number" step="0.01" id="resinWeight" placeholder="Resin Weight (kg)">
-<input type="number" id="tempInput" placeholder="Temperature °C">
-<input type="number" id="humidityInput" placeholder="Humidity %">
-<input type="number" id="jobTime" placeholder="Desired Working Time (minutes)">
+<label>Base Catalyst (%)</label>
+<input id="baseCat" type="number" value="1">
 
-<button onclick="calculateResin()">Calculate</button>
+<label>Base Gel Time (minutes)</label>
+<input id="baseGel" type="number" value="59">
 
-<div class="result" id="resinResult"></div>
+<h2>Current Conditions</h2>
+<label>Workshop Temperature (°C)</label>
+<input id="workshopTemp" type="number" placeholder="30">
+
+<label>Resin Temperature (°C)</label>
+<input id="resinTemp" type="number" placeholder="30">
+
+<label>Mould Temperature (°C)</label>
+<input id="mouldTemp" type="number" placeholder="30">
+
+<label>Desired Working Time (minutes)</label>
+<input id="workingTime" type="number" placeholder="Enter OR catalyst %">
+
+<label>Catalyst (%)</label>
+<input id="catalystInput" type="number" placeholder="Enter OR working time">
+
+<label>Resin Amount (kg)</label>
+<input id="resinWeight" type="number" placeholder="2.00" step="0.01">
+
+<button onclick="calculate()">Calculate</button>
+
+<div class="result" id="result"></div>
 
 </div>
 
 <script>
+function calculate(){
+    // Calibration
+    let baseTemp = parseFloat(document.getElementById("baseTemp").value);
+    let baseCat = parseFloat(document.getElementById("baseCat").value);
+    let baseGel = parseFloat(document.getElementById("baseGel").value);
 
-function calculateResin() {
+    // Current Conditions
+    let workshopTemp = parseFloat(document.getElementById("workshopTemp").value);
+    let resinTemp = parseFloat(document.getElementById("resinTemp").value);
+    let mouldTemp = parseFloat(document.getElementById("mouldTemp").value);
 
-    const resinKg = parseFloat(document.getElementById("resinWeight").value);
-    const temp = parseFloat(document.getElementById("tempInput").value);
-    const humidity = parseFloat(document.getElementById("humidityInput").value);
-    const desiredTime = parseFloat(document.getElementById("jobTime").value);
-    const type = document.getElementById("resinType").value;
+    let workingTime = parseFloat(document.getElementById("workingTime").value);
+    let catalystInput = parseFloat(document.getElementById("catalystInput").value);
+    let resinKg = parseFloat(document.getElementById("resinWeight").value);
 
-    if (isNaN(resinKg) || isNaN(temp) || isNaN(humidity) || isNaN(desiredTime)) {
-        document.getElementById("resinResult").innerHTML = "Fill in all fields.";
+    if(isNaN(workshopTemp) || isNaN(resinTemp) || isNaN(mouldTemp) || isNaN(resinKg)){
+        document.getElementById("result").innerHTML = "Please enter all temperatures and resin amount.";
         return;
     }
 
-    /* Manufacturer specs */
-    let gelTime, basePercent, catalystName;
+    let resinGrams = resinKg * 1000;
 
-    if (type === "winter") {
-        gelTime = 25;
-        basePercent = 2;
-        catalystName = "M100";
-    } 
-    else if (type === "infusion") {
-        gelTime = 35;
-        basePercent = 1.5;
-        catalystName = "M200";
-    } 
-    else {
-        gelTime = 70;
-        basePercent = 2;
-        catalystName = "M100";
+    // Weighted reaction temperature
+    let reactionTemp = 0.5*resinTemp + 0.3*mouldTemp + 0.2*workshopTemp;
+
+    // Temperature factor
+    let tempFactor = Math.pow(0.5, (reactionTemp - baseTemp)/10);
+
+    let catalystPercent;
+    let gelTime;
+    let degasTime = 0;
+
+    // User enters working time
+    if(!isNaN(workingTime) && isNaN(catalystInput)){
+        catalystPercent = baseCat * ((baseGel * tempFactor) / workingTime);
+
+        if(catalystPercent > 3){
+            catalystPercent = 3;
+            gelTime = baseGel * (baseCat / catalystPercent) * tempFactor;
+            degasTime = gelTime - workingTime;
+        } else {
+            gelTime = workingTime;
+        }
+    }
+    // User enters catalyst %
+    else if(!isNaN(catalystInput) && isNaN(workingTime)){
+        catalystPercent = catalystInput;
+        gelTime = baseGel * (baseCat / catalystPercent) * tempFactor;
+    }
+    else{
+        document.getElementById("result").innerHTML = "Enter either Working Time OR Catalyst %, not both.";
+        return;
     }
 
-    /* Convert gel → working time (70%) */
-    const workingMargin = 0.7;
-    const baseWorkingTime = gelTime * workingMargin;
+    // Catalyst mass & volume
+    let catalystGrams = resinGrams * (catalystPercent / 100);
+    let catalystML = catalystGrams / 1.1;
 
-    /* Temperature adjustment */
-    const tempFactor = Math.pow(2, (temp - 25) / 10);
-    const adjustedWorkingTime = baseWorkingTime / tempFactor;
+    // Output
+    let output = 
+        "Weighted Reaction Temperature: " + reactionTemp.toFixed(2) + " °C<br>" +
+        "Catalyst: " + catalystPercent.toFixed(2) + "%<br>" +
+        "Catalyst Volume: " + catalystML.toFixed(2) + " ml<br>" +
+        "Estimated Gel Time: " + gelTime.toFixed(2) + " minutes";
 
-    /* Catalyst calculation */
-    let catalystPercent = (basePercent/100) * (adjustedWorkingTime / desiredTime);
-
-    if (humidity > 40)
-        catalystPercent += (humidity - 40) * 0.00002;
-
-    let hitMax = false;
-    if (catalystPercent > 0.03) {
-        catalystPercent = 0.03;
-        hitMax = true;
-    }
-    if (catalystPercent < 0.01)
-        catalystPercent = 0.01;
-
-    /* Working time (mass does NOT affect this) */
-    let finalWorkingTime = adjustedWorkingTime * ((basePercent/100) / catalystPercent);
-
-    /* Catalyst mL */
-    const resinGrams = resinKg * 1000;
-    const catalystML = (resinGrams * catalystPercent) / 1.1;
-
-    let html =
-        `Resin: <b>${resinKg.toFixed(2)} kg</b><br>` +
-        `Catalyst Type: <b style="color:#ff6600;">${catalystName}</b><br>` +
-        `Catalyst %: <b>${(catalystPercent*100).toFixed(2)}%</b><br>` +
-        `Catalyst Amount: <b>${catalystML.toFixed(1)} mL</b><br>` +
-        `Estimated Working Time: ~${finalWorkingTime.toFixed(0)} mins<br>`;
-
-    /* Fast kick warning */
-    if (finalWorkingTime < 5)
-        html += "<div class='danger flash'>⚠ EXTREME FAST KICK RISK</div>";
-
-    /* -------- DEGAS LOGIC (Mass affects ONLY this) -------- */
-    if (hitMax && finalWorkingTime > desiredTime) {
-
-        let degas = finalWorkingTime - desiredTime;
-
-        /* Mass acceleration applied only to degas */
-        let exothermFactor = 1 + Math.pow(resinKg, 1.3) * 0.04;
-        if (resinKg <= 1) exothermFactor = 1;
-
-        let safeDegasWindow = degas / exothermFactor;
-
-        if (safeDegasWindow > 10)
-            html += `<div class='danger'>DEGAS REQUIRED: ~${safeDegasWindow.toFixed(0)} mins (Mass Accelerated)</div>`;
-        else
-            html += `<div class='warning'>Degas Window: ~${safeDegasWindow.toFixed(0)} mins</div>`;
+    if(degasTime > 0){
+        output += "<br>Degas Time: " + degasTime.toFixed(2) + " minutes";
     }
 
-    document.getElementById("resinResult").innerHTML = html;
+    document.getElementById("result").innerHTML = output;
 }
-
 </script>
 
 </body>
