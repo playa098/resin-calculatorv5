@@ -12,6 +12,7 @@ body {
     margin: 0;
     padding: 0;
 }
+
 header {
     background: #ff6600;
     padding: 15px;
@@ -19,6 +20,7 @@ header {
     font-size: 22px;
     font-weight: bold;
 }
+
 .container { padding: 20px; }
 
 input, select {
@@ -70,13 +72,13 @@ Fibreglass Workshop Resin Calculator
 <h2>Resin Calibration</h2>
 
 <label>Base Temperature (°C)</label>
-<input id="baseTemp" type="number" value="25">
+<input id="baseTemp" type="number">
 
 <label>Base Catalyst (%)</label>
-<input id="baseCat" type="number" value="1.5">
+<input id="baseCat" type="number">
 
 <label>Base Gel Time (minutes)</label>
-<input id="baseGel" type="number" value="35">
+<input id="baseGel" type="number">
 
 
 <h2>Current Conditions</h2>
@@ -107,29 +109,53 @@ Fibreglass Workshop Resin Calculator
 
 <script>
 
+function saveCustomValues(){
+if(document.getElementById("resinType").value === "custom"){
+localStorage.setItem("customBaseTemp", document.getElementById("baseTemp").value);
+localStorage.setItem("customBaseCat", document.getElementById("baseCat").value);
+localStorage.setItem("customBaseGel", document.getElementById("baseGel").value);
+}
+}
+
+function loadCustomValues(){
+let temp = localStorage.getItem("customBaseTemp");
+let cat = localStorage.getItem("customBaseCat");
+let gel = localStorage.getItem("customBaseGel");
+
+if(temp !== null) document.getElementById("baseTemp").value = temp;
+if(cat !== null) document.getElementById("baseCat").value = cat;
+if(gel !== null) document.getElementById("baseGel").value = gel;
+}
+
 function setResinDefaults(){
+
+saveCustomValues();
 
 let type = document.getElementById("resinType").value;
 
-if(type == "infusion"){
+if(type === "custom"){
+loadCustomValues();
+}
+
+if(type === "infusion"){
 document.getElementById("baseTemp").value = 25;
 document.getElementById("baseCat").value = 1.5;
 document.getElementById("baseGel").value = 35;
 }
 
-if(type == "gpwinter"){
+if(type === "gpwinter"){
 document.getElementById("baseTemp").value = 25;
 document.getElementById("baseCat").value = 2;
 document.getElementById("baseGel").value = 25;
 }
 
-if(type == "gpsummer"){
+if(type === "gpsummer"){
 document.getElementById("baseTemp").value = 25;
 document.getElementById("baseCat").value = 2;
 document.getElementById("baseGel").value = 70;
 }
 
-if(type == "vinylester"){
+if(type === "vinylester"){
 document.getElementById("baseTemp").value = 25;
 document.getElementById("baseCat").value = 2;
 document.getElementById("baseGel").value = 40;
@@ -137,7 +163,13 @@ document.getElementById("baseGel").value = 40;
 
 }
 
+window.onload = function(){
+loadCustomValues();
+};
+
 function calculate(){
+
+saveCustomValues();
 
 let baseTemp = parseFloat(document.getElementById("baseTemp").value);
 let baseCat = parseFloat(document.getElementById("baseCat").value);
@@ -174,8 +206,7 @@ if(catalystPercent > 3){
 catalystPercent = 3;
 gelTime = baseGel * (baseCat / catalystPercent) * tempFactor;
 degasTime = gelTime - workingTime;
-}
-else{
+}else{
 gelTime = workingTime;
 }
 
