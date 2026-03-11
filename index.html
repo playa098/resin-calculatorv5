@@ -119,6 +119,10 @@ Fibreglass Workshop Resin Calculator
     <input id="catalystInput" type="number" placeholder="Catalyst (%)">
 </div>
 
+<!-- Optional Fill Time -->
+<label>Estimated Fill Time (minutes, optional)</label>
+<input id="fillTime" type="number">
+
 <button onclick="calculate()">Calculate</button>
 
 <div class="result" id="result"></div>
@@ -192,6 +196,8 @@ function calculate(){
     let catalystInput = parseFloat(document.getElementById("catalystInput").value);
     let resinKg = parseFloat(document.getElementById("resinWeight").value);
 
+    let fillTime = parseFloat(document.getElementById("fillTime").value); // optional
+
     if(isNaN(workshopTemp) || isNaN(resinTemp) || isNaN(mouldTemp) || isNaN(resinKg)){
         document.getElementById("result").innerHTML = "Please enter all temperatures and resin amount.";
         return;
@@ -236,6 +242,22 @@ function calculate(){
 
     if(degasTime > 0){
         output += "<br>Degas Time: " + degasTime.toFixed(2) + " minutes";
+    }
+
+    // Optional Infusion Safety
+    if(!isNaN(fillTime)){
+        let safetyMargin = gelTime - fillTime;
+        let status = "";
+        if(safetyMargin > 10){
+            status = "SAFE INFUSION";
+        } else if(safetyMargin >= 5){
+            status = "LOW SAFETY MARGIN";
+        } else {
+            status = "HIGH RISK OF DRY SPOTS";
+        }
+        output += "<br><br>Infusion Fill Time: " + fillTime.toFixed(2) + " min" +
+                  "<br>Safety Margin: " + safetyMargin.toFixed(2) + " min" +
+                  "<br>Status: " + status;
     }
 
     document.getElementById("result").innerHTML = output;
