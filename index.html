@@ -54,24 +54,11 @@ button {
     font-weight: bold;
 }
 
-/* OR layout */
-.or-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    margin: 10px 0;
-}
-
-.or-row span {
-    display: inline-block;
-    font-size: 18px;
+/* Vertical OR */
+.or-text {
     text-align: center;
-    width: 30px;
-}
-
-.or-row input {
-    flex: 1;
+    font-size: 18px;
+    margin: 5px 0;
 }
 </style>
 </head>
@@ -112,12 +99,10 @@ Fibreglass Workshop Resin Calculator
 <label>Resin Amount (kg)</label>
 <input id="resinWeight" type="number" step="0.01">
 
-<!-- OR Row -->
-<div class="or-row">
-    <input id="workingTime" type="number" placeholder="Desired Working Time (minutes)">
-    <span>OR</span>
-    <input id="catalystInput" type="number" placeholder="Catalyst (%)">
-</div>
+<!-- Vertical OR -->
+<input id="workingTime" type="number" placeholder="Desired Working Time (minutes)">
+<div class="or-text">OR</div>
+<input id="catalystInput" type="number" placeholder="Catalyst (%)">
 
 <!-- Optional Fill Time -->
 <label>Estimated Fill Time (minutes, optional)</label>
