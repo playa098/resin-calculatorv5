@@ -5,10 +5,7 @@
 <title>Fibreglass Workshop Resin Calculator</title>
 
 <style>
-
-* {
-box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
     font-family: Arial, sans-serif;
@@ -57,6 +54,25 @@ button {
     font-weight: bold;
 }
 
+/* OR layout */
+.or-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 10px 0;
+}
+
+.or-row span {
+    display: inline-block;
+    font-size: 18px;
+    text-align: center;
+    width: 30px;
+}
+
+.or-row input {
+    flex: 1;
+}
 </style>
 </head>
 
@@ -69,192 +85,161 @@ Fibreglass Workshop Resin Calculator
 <div class="container">
 
 <h2>Resin Type</h2>
-
 <select id="resinType" onchange="setResinDefaults()">
-<option value="custom">Custom Gel Test</option>
-<option value="infusion">Infusion Resin</option>
-<option value="gpwinter">GP Resin (Winter)</option>
-<option value="gpsummer">GP Resin (Summer)</option>
-<option value="vinylester">Vinylester Resin</option>
+    <option value="custom">Custom Gel Test</option>
+    <option value="infusion">Infusion Resin</option>
+    <option value="gpwinter">GP Resin (Winter)</option>
+    <option value="gpsummer">GP Resin (Summer)</option>
+    <option value="vinylester">Vinylester Resin</option>
 </select>
 
-
 <h2>Resin Calibration</h2>
-
 <label>Base Temperature (°C)</label>
 <input id="baseTemp" type="number">
-
 <label>Base Catalyst (%)</label>
 <input id="baseCat" type="number">
-
 <label>Base Gel Time (minutes)</label>
 <input id="baseGel" type="number">
 
-
 <h2>Current Conditions</h2>
-
 <label>Workshop Temperature (°C)</label>
 <input id="workshopTemp" type="number">
-
 <label>Resin Temperature (°C)</label>
 <input id="resinTemp" type="number">
-
 <label>Mould Temperature (°C)</label>
 <input id="mouldTemp" type="number">
-
-<label>Desired Working Time (minutes)</label>
-<input id="workingTime" type="number" placeholder="Enter OR catalyst %">
-
-<label>Catalyst (%)</label>
-<input id="catalystInput" type="number" placeholder="Enter OR working time">
 
 <label>Resin Amount (kg)</label>
 <input id="resinWeight" type="number" step="0.01">
 
+<!-- OR Row -->
+<div class="or-row">
+    <input id="workingTime" type="number" placeholder="Desired Working Time (minutes)">
+    <span>OR</span>
+    <input id="catalystInput" type="number" placeholder="Catalyst (%)">
+</div>
+
 <button onclick="calculate()">Calculate</button>
 
 <div class="result" id="result"></div>
-
 </div>
 
 <script>
-
 function saveCustomValues(){
-if(document.getElementById("resinType").value === "custom"){
-localStorage.setItem("customBaseTemp", document.getElementById("baseTemp").value);
-localStorage.setItem("customBaseCat", document.getElementById("baseCat").value);
-localStorage.setItem("customBaseGel", document.getElementById("baseGel").value);
-}
+    if(document.getElementById("resinType").value === "custom"){
+        localStorage.setItem("customBaseTemp", document.getElementById("baseTemp").value);
+        localStorage.setItem("customBaseCat", document.getElementById("baseCat").value);
+        localStorage.setItem("customBaseGel", document.getElementById("baseGel").value);
+    }
 }
 
 function loadCustomValues(){
-let temp = localStorage.getItem("customBaseTemp");
-let cat = localStorage.getItem("customBaseCat");
-let gel = localStorage.getItem("customBaseGel");
+    let temp = localStorage.getItem("customBaseTemp");
+    let cat = localStorage.getItem("customBaseCat");
+    let gel = localStorage.getItem("customBaseGel");
 
-if(temp !== null) document.getElementById("baseTemp").value = temp;
-if(cat !== null) document.getElementById("baseCat").value = cat;
-if(gel !== null) document.getElementById("baseGel").value = gel;
+    if(temp !== null) document.getElementById("baseTemp").value = temp;
+    if(cat !== null) document.getElementById("baseCat").value = cat;
+    if(gel !== null) document.getElementById("baseGel").value = gel;
 }
 
 function setResinDefaults(){
+    saveCustomValues();
 
-saveCustomValues();
+    let type = document.getElementById("resinType").value;
 
-let type = document.getElementById("resinType").value;
-
-if(type === "custom"){
-loadCustomValues();
-}
-
-if(type === "infusion"){
-document.getElementById("baseTemp").value = 25;
-document.getElementById("baseCat").value = 1.5;
-document.getElementById("baseGel").value = 35;
-}
-
-if(type === "gpwinter"){
-document.getElementById("baseTemp").value = 25;
-document.getElementById("baseCat").value = 2;
-document.getElementById("baseGel").value = 25;
-}
-
-if(type === "gpsummer"){
-document.getElementById("baseTemp").value = 25;
-document.getElementById("baseCat").value = 2;
-document.getElementById("baseGel").value = 70;
-}
-
-if(type === "vinylester"){
-document.getElementById("baseTemp").value = 25;
-document.getElementById("baseCat").value = 2;
-document.getElementById("baseGel").value = 40;
-}
-
+    if(type === "custom"){
+        loadCustomValues();
+    }
+    if(type === "infusion"){
+        document.getElementById("baseTemp").value = 25;
+        document.getElementById("baseCat").value = 1.5;
+        document.getElementById("baseGel").value = 35;
+    }
+    if(type === "gpwinter"){
+        document.getElementById("baseTemp").value = 25;
+        document.getElementById("baseCat").value = 2;
+        document.getElementById("baseGel").value = 25;
+    }
+    if(type === "gpsummer"){
+        document.getElementById("baseTemp").value = 25;
+        document.getElementById("baseCat").value = 2;
+        document.getElementById("baseGel").value = 70;
+    }
+    if(type === "vinylester"){
+        document.getElementById("baseTemp").value = 25;
+        document.getElementById("baseCat").value = 2;
+        document.getElementById("baseGel").value = 40;
+    }
 }
 
 window.onload = function(){
-loadCustomValues();
+    loadCustomValues();
 };
 
 function calculate(){
+    saveCustomValues();
 
-saveCustomValues();
+    let baseTemp = parseFloat(document.getElementById("baseTemp").value);
+    let baseCat = parseFloat(document.getElementById("baseCat").value);
+    let baseGel = parseFloat(document.getElementById("baseGel").value);
 
-let baseTemp = parseFloat(document.getElementById("baseTemp").value);
-let baseCat = parseFloat(document.getElementById("baseCat").value);
-let baseGel = parseFloat(document.getElementById("baseGel").value);
+    let workshopTemp = parseFloat(document.getElementById("workshopTemp").value);
+    let resinTemp = parseFloat(document.getElementById("resinTemp").value);
+    let mouldTemp = parseFloat(document.getElementById("mouldTemp").value);
 
-let workshopTemp = parseFloat(document.getElementById("workshopTemp").value);
-let resinTemp = parseFloat(document.getElementById("resinTemp").value);
-let mouldTemp = parseFloat(document.getElementById("mouldTemp").value);
+    let workingTime = parseFloat(document.getElementById("workingTime").value);
+    let catalystInput = parseFloat(document.getElementById("catalystInput").value);
+    let resinKg = parseFloat(document.getElementById("resinWeight").value);
 
-let workingTime = parseFloat(document.getElementById("workingTime").value);
-let catalystInput = parseFloat(document.getElementById("catalystInput").value);
-let resinKg = parseFloat(document.getElementById("resinWeight").value);
+    if(isNaN(workshopTemp) || isNaN(resinTemp) || isNaN(mouldTemp) || isNaN(resinKg)){
+        document.getElementById("result").innerHTML = "Please enter all temperatures and resin amount.";
+        return;
+    }
 
-if(isNaN(workshopTemp) || isNaN(resinTemp) || isNaN(mouldTemp) || isNaN(resinKg)){
-document.getElementById("result").innerHTML = "Please enter all temperatures and resin amount.";
-return;
+    let resinGrams = resinKg * 1000;
+    let reactionTemp = 0.5*resinTemp + 0.3*mouldTemp + 0.2*workshopTemp;
+    let tempFactor = Math.pow(0.5, (reactionTemp - baseTemp)/10);
+
+    let catalystPercent;
+    let gelTime;
+    let degasTime = 0;
+
+    if(!isNaN(workingTime) && isNaN(catalystInput)){
+        catalystPercent = baseCat * ((baseGel * tempFactor) / workingTime);
+
+        if(catalystPercent > 3){
+            catalystPercent = 3;
+            gelTime = baseGel * (baseCat / catalystPercent) * tempFactor;
+            degasTime = gelTime - workingTime;
+        } else {
+            gelTime = workingTime;
+        }
+    }
+    else if(!isNaN(catalystInput) && isNaN(workingTime)){
+        catalystPercent = catalystInput;
+        gelTime = baseGel * (baseCat / catalystPercent) * tempFactor;
+    }
+    else{
+        document.getElementById("result").innerHTML = "Enter either Working Time OR Catalyst %, not both.";
+        return;
+    }
+
+    let catalystGrams = resinGrams * (catalystPercent / 100);
+    let catalystML = catalystGrams / 1.1;
+
+    let output =
+    "Weighted Reaction Temperature: " + reactionTemp.toFixed(2) + " °C<br>" +
+    "Catalyst: " + catalystPercent.toFixed(2) + "%<br>" +
+    "Catalyst Volume: " + catalystML.toFixed(2) + " ml<br>" +
+    "Estimated Gel Time: " + gelTime.toFixed(2) + " minutes";
+
+    if(degasTime > 0){
+        output += "<br>Degas Time: " + degasTime.toFixed(2) + " minutes";
+    }
+
+    document.getElementById("result").innerHTML = output;
 }
-
-let resinGrams = resinKg * 1000;
-
-let reactionTemp = 0.5*resinTemp + 0.3*mouldTemp + 0.2*workshopTemp;
-
-let tempFactor = Math.pow(0.5, (reactionTemp - baseTemp)/10);
-
-let catalystPercent;
-let gelTime;
-let degasTime = 0;
-
-if(!isNaN(workingTime) && isNaN(catalystInput)){
-
-catalystPercent = baseCat * ((baseGel * tempFactor) / workingTime);
-
-if(catalystPercent > 3){
-catalystPercent = 3;
-gelTime = baseGel * (baseCat / catalystPercent) * tempFactor;
-degasTime = gelTime - workingTime;
-}else{
-gelTime = workingTime;
-}
-
-}
-
-else if(!isNaN(catalystInput) && isNaN(workingTime)){
-
-catalystPercent = catalystInput;
-gelTime = baseGel * (baseCat / catalystPercent) * tempFactor;
-
-}
-
-else{
-
-document.getElementById("result").innerHTML =
-"Enter either Working Time OR Catalyst %, not both.";
-return;
-
-}
-
-let catalystGrams = resinGrams * (catalystPercent / 100);
-
-let catalystML = catalystGrams / 1.1;
-
-let output =
-"Weighted Reaction Temperature: " + reactionTemp.toFixed(2) + " °C<br>" +
-"Catalyst: " + catalystPercent.toFixed(2) + "%<br>" +
-"Catalyst Volume: " + catalystML.toFixed(2) + " ml<br>" +
-"Estimated Gel Time: " + gelTime.toFixed(2) + " minutes";
-
-if(degasTime > 0){
-output += "<br>Degas Time: " + degasTime.toFixed(2) + " minutes";
-}
-
-document.getElementById("result").innerHTML = output;
-
-}
-
 </script>
 
 </body>
